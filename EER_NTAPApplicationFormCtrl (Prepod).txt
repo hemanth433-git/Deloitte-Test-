@@ -83,7 +83,7 @@ public class EER_NTAPApplicationCTRL {
         EV_1_FAILED=2;
         EV_2_FAILED=3;
         EV_3_FAILED=4;
-        subTotal = 0.00;
+        subTotal = 0.000;
         approvedCosts = 0.00;
         
         
