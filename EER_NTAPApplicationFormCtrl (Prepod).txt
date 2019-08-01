@@ -84,7 +84,7 @@ public class EER_NTAPApplicationCTRL {
         EV_2_FAILED=3;
         EV_3_FAILED=4;
         subTotal = 0.0000;
-        approvedCosts = 0.00;
+        approvedCosts = 0.000;
         
         
         pagePanels=new List<Integer>{0,1, 1, 1, 1, 1, 3};
