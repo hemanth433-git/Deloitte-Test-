@@ -1,0 +1,490 @@
+public class EER_NTAPApplicationCTRL {
+
+    /*Variable Declaration*/
+    public boolean isValidRequest{get; set;}
+    public boolean isValidExpense{get; set;}      
+    public boolean isSubmitted{get; set;}
+    public boolean extendedTax{get; set;}
+    public boolean formerIntern{get; set;}
+    public boolean contractor{get; set;}
+    public boolean nonUSProf{get; set;}
+    public boolean isServiceLine{get;set;}
+    public boolean usdcHireValidation{get;set;}
+    public boolean noLeadDiscussion{get;set;}
+    public boolean isEnablingAreas{get;set;}
+    public boolean isIneligibleJobLevel{get;set;}
+    public boolean isNonGeneralApplicant{get;set;}
+    public boolean isloggedInDTTL{get;set;}
+    
+    public integer currentPage {get; set;}
+    public integer currentPanel {get; set;}
+    public integer validationStatus{get; set;}
+    public integer[] pagePanels{get; set;}
+    public Decimal subTotal {get; set;}
+    public Decimal approvedCosts {get; set;}
+    
+    public Contact loggedContact;
+    public string emailId {get; set;}
+    public string FirstName {get; set;}
+    public string LastName {get; set;}
+    public string Name {get; set;}
+    public string empFunction{get;set;}
+    public string PlanFlag{get;set;}
+    public string usdcHireDate{get;set;}
+    public string BLemail{get;set;}
+    public string BLname{get;set;}
+    public string OLname{get;set;}    
+    public string OLemail{get;set;}
+    public string extendedTaxPdf{get;set;}
+    public string counseler{get;set;}
+    public string businessAdv{get;set;}
+    
+    /*The validationStatus possbile values are : 
+0 : EV_START    : Yet to Validate.
+1 : EV_SUCCESS  : Validated.  
+2 : EV_1_FAILED : First Validation Failure.
+3 : EV_2_FAILED : Secound Validation Failure.
+*/
+    public final integer EV_START{get; set;}
+    public final integer EV_SUCCESS{get; set;}
+    public final integer EV_1_FAILED{get; set;}
+    public final integer EV_2_FAILED{get; set;}
+    public final integer EV_3_FAILED{get; set;}
+   
+    /*Document */
+    public GBL_Attachments attachmentHelper{get; set;}
+    
+    public CER_Expense_Reimbursement__c expenseRequest{get; set;}
+    
+    public CER_Expense_Reimbursement__c expRec{get; set;}
+    
+    public List<Contact> BLemailList {get;set;}
+    public List<Contact> OLemailList {get;set;}
+    
+    public Map<String,String> ineligibleJobLevelMap {get;set;}
+    
+    /*Variable Declaration --END*/
+    
+    /*
+* Method name  : EER_USActuarialReimburseReq_CTRL
+* Description  : Construstor.
+* Return Type  : NA
+* Parameter    : nil
+*/
+    public EER_NTAPApplicationCTRL()
+    {
+        /*Intialization*/
+        validationStatus=0;
+        currentPage=0;
+        currentPanel=0;
+        
+        EV_START=0;
+        EV_SUCCESS=1;
+        EV_1_FAILED=2;
+        EV_2_FAILED=3;
+        EV_3_FAILED=4;
+        subTotal = 0.00;
+        approvedCosts = 0.00;
+        
+        
+        pagePanels=new List<Integer>{0,1, 1, 1, 1, 1, 3};
+        expenseRequest= new CER_Expense_Reimbursement__c();
+        ineligibleJobLevelMap=new Map<String,String>();
+        isValidRequest=true;
+        isValidExpense=false;     
+        isSubmitted=false;    
+        extendedTax=false;
+        formerIntern=false;
+        contractor=false;
+        nonUSProf=false;
+        isServiceLine=false;
+        usdcHireValidation=false;
+        noLeadDiscussion=false;
+        isEnablingAreas=false;
+        isIneligibleJobLevel=false;
+        isNonGeneralApplicant=false;
+        isloggedInDTTL=false;
+        
+        attachmentHelper= new GBL_Attachments();
+        
+        usdcHireDate = Label.EER_USDCHireDate;
+        System.debug('usdcHireDate :: '+usdcHireDate);
+        
+        /* Get all ineligible Job levels*/
+        for(NTAP_Audit_Inligible_Levels__c jobLevel : NTAP_Audit_Inligible_Levels__c.getAll().values()){
+            ineligibleJobLevelMap.put(jobLevel.name,jobLevel.name);              
+        }
+        
+        
+        /*String userEmailId = userInfo.getUserEmail();
+        
+        if(!String.isEmpty(userEmailId))
+        {
+            Contact loggedInContact = [Select id, wct_function__c, WCT_Type__c, WCT_Region__c, WCT_Job_Text__c, WCT_Job_Level_Text__c, WCT_Service_Line__c FROM Contact WHERE AR_Deloitte_Email__c=:userEmailId]; 
+            if(loggedInContact!=null && loggedInContact.WCT_Service_Line__c=='DTTL')
+            {
+                isloggedInDTTL=true;
+            }    
+            
+        } */
+        
+        
+    }
+    
+    /*
+* Method name  : getContactInfo
+* Description  : To get the Contact details
+* Return Type  : NA
+* Parameter    : nil
+*/
+    public void getContactInfo()
+    {
+        if(loggedContact!=null)
+        {
+            emailId=loggedContact.AR_Deloitte_Email__c;
+            FirstName=loggedContact.FirstName;
+            LastName=loggedContact.LastName;
+            Name=loggedContact.Name;         
+            empFunction=loggedContact.WCT_Function__c;
+            counseler=loggedContact.WCT_DPM_Counselor__c;
+            businessAdv=loggedContact.Business_Advisor__c;
+            PlanFlag=loggedContact.WCT_Alternate_Career_Model_Flag__c;
+            if((!String.isEmpty(loggedContact.WCT_Service_Line__c)) && loggedContact.WCT_Service_Line__c=='DTTL' && empFunction=='GLOBAL')
+                isServiceLine=True;
+            formerIntern=loggedContact.Is_Former_Intern__c;
+            if((!String.isEmpty(loggedContact.WCT_Type__c)) && loggedContact.WCT_Type__c=='External')
+                contractor=True;
+            if((!String.isEmpty(loggedContact.WCT_Region__c)) && loggedContact.WCT_Region__c=='US - USI')
+            	nonUSProf=True;    
+        }
+    }
+    
+    /*
+* Method name  : nextPanel
+* Description  : to move to nextPanel 
+* Return Type  : Null 
+* Parameter    : Nil
+*/
+    
+    public PageReference nextPanel()
+    {
+        integer noOfPanel= pagePanels[currentPage];
+        
+        System.debug('nextPanel: noOfPanel:pagePanels[currentPage] :: '+noOfPanel+' '+currentPage+' '+pagePanels[currentPage]);
+        
+        if(currentPanel>=noOfPanel)
+        {
+            currentPage++;
+            currentPanel=1; 
+        }else
+        {
+            currentPanel++;          
+        }
+        
+        System.debug('nextPanel: currentPage:currentPanel::'+currentPage+' '+currentPanel);
+        return null;
+    }
+    
+    /*
+* Method name  : emailValidate
+* Description  : To check if the email (Deloitte Email) entered on the form is of Employee
+* Return Type  : Null
+* Parameter    : nil
+*/
+    public pageReference emailValidate()
+    {
+        System.debug('emailValidate: emailId :: '+emailId);
+        
+        if(emailId!='')
+        {
+            
+            List<Contact> contacts= [SELECT Id,Name,WCT_Personnel_Number__c,Is_Former_Intern__c,WCT_DPM_Counselor__c,Business_Advisor__c,WCT_Job_Level_Text__c,WCT_Original_Hire_Date__c,WCT_Service_Line__c,WCT_Region__c,WCT_Type__c,Email,AR_Deloitte_Email__c,FirstName,LastName,RecordType.Name,AR_Personal_Email__c, RecordTypeId,WCT_Alternate_Career_Model_Flag__c,WCT_Function__c FROM Contact WHERE AR_Deloitte_Email__c =: emailId ORDER BY CreatedDate Desc];
+           
+            if(contacts.size()>0)
+            {                
+                /* If more than one contact : possible {Employee and Candidate} which one to select.*/                
+                loggedContact=getCorrectRecord(contacts);
+                getContactInfo();
+                validationStatus=EV_SUCCESS;
+                expenseRequest.EER_EmployeeName__c = loggedContact.Id;
+                Date usdcHireDateVal = Date.parse(usdcHireDate);
+                Date finalUsdcDate = Date.newInstance(usdcHireDateVal.year(),usdcHireDateVal.month(),usdcHireDateVal.day());
+                System.debug('finalUsdcDate :: '+finalUsdcDate + 'usdcHireDateVal :: ' +usdcHireDateVal);
+                if(!String.isEmpty(PlanFlag)  && PlanFlag == 'Plan C' && loggedContact.WCT_Original_Hire_Date__c>finalUsdcDate)
+                {
+                	usdcHireValidation=true;
+                    System.debug('usdcHireValidation :: '+usdcHireValidation);
+                }
+                
+                if(empFunction=='AUDIT & ASSURANCE' && (!String.isEmpty(loggedContact.WCT_Job_Level_Text__c)) && ineligibleJobLevelMap.containsKey(loggedContact.WCT_Job_Level_Text__c)) 
+                {
+                	isIneligibleJobLevel=true;
+                    System.debug('isIneligibleJobLevel :: '+isIneligibleJobLevel);
+                }
+                
+                //nextPanel();  
+                mappingRecordTypeId(); 
+                System.debug('contractor :: '+contractor + 'formerIntern :: '+formerIntern + 'nonUSProf :: '+nonUSProf + 'usdcHireValidation :: '+usdcHireValidation + 'isIneligibleJobLevel :: '+isIneligibleJobLevel );
+                
+            }
+            else
+            {
+                /*If error for first time update status to "EV_1_FAILED", If the error is secound time update status for : EV_2_FAILED  */
+                validationStatus=(validationStatus==EV_1_FAILED)?EV_2_FAILED:EV_1_FAILED;
+            }
+            
+        }
+        return null; 
+    }
+    
+    /*
+* Method name  : getCorrectRecord
+* Description  : To identify correct Contact if more than one contact found in the System : possible {Employee and Candidate} - Select Employee
+* Return Type  : contact
+* Parameter    : List of Contacts
+*/
+    public contact getCorrectRecord(List<Contact>  contacts)
+    {
+        Contact tempContact=null;
+        
+        /*If only one contact then choose the one returned*/
+        if(contacts.size()==1)
+        {
+            tempContact=contacts[0];
+        }
+        else
+        {
+            /*Multiple contact scenario, where the contacts has to be choosen from list of contacts.
+1. Choose the latest created except the Employee.
+*/
+            Contact temp=contacts[0];
+            if(temp.recordTypeId==Label.Employee_Record_Type_ID)
+            {
+                tempContact=contacts[0];
+            }
+            else
+            {
+                tempContact=contacts[1];
+            }
+        }
+        return tempContact;
+    }
+    
+    /*
+* Method name  : prev
+* Description  : to move to previous screen
+* Return Type  : Null 
+* Parameter    : Nil
+*/
+    public pageReference prev()
+    {
+        if(currentPage>1)
+        {
+            currentPage--;
+        }
+        return null;
+    }
+    
+    /*
+* Method name  : next
+* Description  : to move to next screen
+* Return Type  : Null 
+* Parameter    : Nil
+*/
+    public pageReference next()
+    {
+        
+        System.debug('next: currentPage ::' +currentPage + ' validationStatus ::'+validationStatus);
+        if(currentPage>=1)
+        {
+            currentPage++;
+            //validationStatus++;
+            noLeadDiscussion=true;
+            System.debug('contractor :: '+contractor + 'formerIntern :: '+formerIntern + 'nonUSProf :: '+nonUSProf + 'usdcHireValidation :: '+usdcHireValidation + 'isIneligibleJobLevel :: '+isIneligibleJobLevel + 'noLeadDiscussion ::' +noLeadDiscussion);
+        }
+        return null;
+    }
+    
+    /*
+* Method name  : extendedTaxHandler
+* Description  : Capturing extendedTax boolean value if employee is related to Extended Tax.
+* Return Type  : Null
+* Parameter    : nil
+*/
+    
+    public PageReference extendedTaxHandler()
+    {
+        if(extendedTax==False)
+        {
+        	extendedTax=True;
+            extendedTaxPdf='Yes';
+            system.debug('extendedTax :: '+extendedTax);
+        }
+        else
+        {
+            extendedTax=False;
+            extendedTaxPdf='No';
+            system.debug('extendedTax :: '+extendedTax);
+        }
+        return null; 
+    }
+    
+   
+    /*
+* Method name  : mappingRecordTypeId
+* Description  : Mapping record type id as per employee function. 
+* Return Type  : Null 
+* Parameter    : Nil
+*/
+    
+    public void mappingRecordTypeId()
+    {
+    	if(empFunction=='RISK AND FINANCIAL ADVISORY')
+        {
+            expenseRequest.RecordTypeId = Schema.SObjectType.CER_Expense_Reimbursement__c.getRecordTypeInfosByName().get('EER NTAP Advisory').getRecordTypeId();    
+        }
+        else if(empFunction=='AUDIT & ASSURANCE')
+        {
+            expenseRequest.RecordTypeId = Schema.SObjectType.CER_Expense_Reimbursement__c.getRecordTypeInfosByName().get('EER NTAP Audit').getRecordTypeId();    
+        }
+        else if(empFunction=='CONSULTING')
+        {
+            expenseRequest.RecordTypeId = Schema.SObjectType.CER_Expense_Reimbursement__c.getRecordTypeInfosByName().get('EER NTAP Consulting').getRecordTypeId();    
+        }
+        else if(empFunction=='TAX' && extendedTax==false)
+        {
+            expenseRequest.RecordTypeId = Schema.SObjectType.CER_Expense_Reimbursement__c.getRecordTypeInfosByName().get('EER NTAP Tax').getRecordTypeId();    
+        }
+        else if(empFunction=='TAX' && extendedTax==true)
+        {
+            expenseRequest.RecordTypeId = Schema.SObjectType.CER_Expense_Reimbursement__c.getRecordTypeInfosByName().get('EER NTAP Extended Tax').getRecordTypeId();    
+        }
+        else if(empFunction=='GLOBAL' && isServiceLine==true)
+        {
+            expenseRequest.RecordTypeId = Schema.SObjectType.CER_Expense_Reimbursement__c.getRecordTypeInfosByName().get('EER NTAP Global').getRecordTypeId();    
+        }
+        else if(empFunction!='MARKET DEVELOPMENT')
+        {
+            isEnablingAreas=true;
+            expenseRequest.RecordTypeId = Schema.SObjectType.CER_Expense_Reimbursement__c.getRecordTypeInfosByName().get('EER NTAP Services').getRecordTypeId();    
+        }    
+        
+    }
+    
+    /*
+* Method name  : submitForm
+* Description  : to submit the entered expense reimbursement details 
+* Return Type  : Null 
+* Parameter    : Nil
+*/
+    public PageReference submitForm()
+    {   
+        try 
+        {
+            expenseRequest.EER_ReimbursementsGroup__c = 'Employees';
+            expenseRequest.CER_Request_Status__c='Submitted by Employee';
+            
+            
+            insert expenseRequest;
+            
+            /*Querying the Expense Reuest to get the expense Reimbursement Name (auto number )*/
+            List<CER_Expense_Reimbursement__c> request= [SELECT id,Name,EER_EmployeeName__r.name,EER_EmployeeName__r.firstname,EER_PersonnelNumber__c,EER_Business__c,EER_Counseler__c,
+                                                         EER_Numberofyearsincurrentposition__c,EER_ExtendedTax__c,EER_DiscussionswithLeads__c,EER_LeadsApprovalreceived__c,EER_BusinessAdvisor__c,
+                                                         EER_SabbaticalApproved__c,EER_NameofDegreeProgram__c,EER_EducationProgramaccepted__c,EER_ProgramCommencementDate__c,EER_BusinessLeadersEmail__c,
+                                                         EER_ProgramCompletionDate__c,EER_Full12monthCost__c,EER_TypeofDegreeProgram__c,EER_PartTimeStudyNote__c,EER_FinancialAssistanceNeeded__c,
+                                                         EER_FinancialAssistanceNote__c,EER_ReasontopursureDegreeProgram__c,EER_Programqualifiesfornewtradebiz__c,EER_Ifyespleaseexplain__c,
+                                                         EER_Employmentrelationshipcompliant__c,EER_Ifyespleaseindicateandexplain__c,EER_ATuitionBooksSupplies__c,EER_BRegistration__c,EER_CSubtotalAB__c,
+                                                         EER_UnapprovedCosts__c,EER_ETotalApprovedCostCD__c,EER_OperationLeadersEmail__c,EER_TypeOfApplication__c FROM CER_Expense_Reimbursement__c Where id=:expenseRequest.id];
+            if(request.size()>0)
+            {
+                expenseRequest=request[0];
+                
+            }
+            /*Update Attachments */
+            attachmentHelper.uploadRelatedAttachment(expenseRequest.id);
+            
+                       
+            
+            nextPanel();
+            isSubmitted=true; 
+            
+            if(isSubmitted)
+                saveAttachement();
+        }
+        catch(Exception e)
+        {
+            WCT_ExceptionUtility.logException('EER_NTAPApplicationCTRL', 'EER_NTAPApplicationCTRL Error', 'Line #'+e.getLineNumber()+'Message: '+e.getMessage() + ' trace :' + e.getStackTraceString());         
+        }
+        return null;
+    }
+    
+    /*
+* Method name  : saveAttachement
+* Description  : Generating a PDF of submitted Expense application. 
+* Return Type  : Null 
+* Parameter    : Nil
+*/
+    
+    public PageReference saveAttachement() {
+              
+    	expRec = expenseRequest;
+        
+        if(expRec != null)
+        {
+            PageReference pRef = Page.EER_NTAPApplicationPdf;
+            Attachment applicationpdf = new Attachment();
+            if(Test.isRunningTest())
+            {
+            	applicationpdf.Body = blob.valueOf('Unit.Test');
+            }else{ 
+            	applicationpdf.Body = pRef.getContent();    
+            }    
+            applicationpdf.ContentType = '.pdf';
+            applicationpdf.Name = expRec.name+' '+'Application PDF';
+            applicationpdf.Name += '.pdf';
+            applicationpdf.ParentId = expRec.id;
+            insert applicationpdf;          
+            
+            
+        }
+    	return null;
+      
+    }
+    
+    /*
+* Method name  : updateBLandOLdetails
+* Description  : Querying contacts with email id mentioned in form and loading result to respective fields. 
+* Return Type  : Null 
+* Parameter    : Nil
+*/
+    public pagereference updateBLandOLdetails()
+    {
+       BLname='';
+       OLname='';
+       if(BLemail!='')           
+       {
+        BLemailList=[SELECT id,name,AR_Deloitte_Email__c,WCT_Type__c from Contact where AR_Deloitte_Email__c=:BLemail AND WCT_Type__c='Employee' LIMIT 1];  
+           
+           if(BLemailList.size()>0)
+           {
+               expenseRequest.EER_BusinessLeadersEmail__c=BLemailList[0].AR_Deloitte_Email__c;
+               BLname= BLemailList[0].name;
+               System.debug('BLname '+BLname);
+           }
+           
+       }
+       if(OLemail!='')
+       {
+         OLemailList=[SELECT id,name,AR_Deloitte_Email__c from Contact where AR_Deloitte_Email__c=:OLemail AND WCT_Type__c='Employee' LIMIT 1];  
+            
+           if(OLemailList.size()>0)
+           {
+               expenseRequest.EER_OperationLeadersEmail__c=OLemailList[0].AR_Deloitte_Email__c;
+               OLname= OLemailList[0].name;
+           }           
+          
+       }
+         return null;
+    }
+    
+}
