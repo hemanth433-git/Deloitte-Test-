@@ -11,6 +11,7 @@ Function    : Controller class to the visual force page : "EER_EmergencyBackupCa
 public class EER_EmergencyBackupCareForm_CTRL  
 {
     /*Variable Declaration - START By one Key option from the sublime Text 3 */
+	/* testing*/
     public boolean isValidRequest{get; set;}
     public boolean isValidExpense{get; set;}	
     public boolean isBackupDayCare {get; set;}
